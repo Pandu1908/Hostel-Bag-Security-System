@@ -1,0 +1,92 @@
+/*
+  Smart Hostel Student Bag Security System
+  ----------------------
+  Features:
+  1. Arms/Disarms using a push button.
+  2. Detects bag movement using a vibration sensor.
+  3. Detects bag opening using a reed switch.
+  4. Activates buzzer when intrusion is detected.
+  5. Prints system status on Serial Monitor.
+
+  Hardware:
+  Arduino UNO
+  SW-420 Vibration Sensor
+  Reed Switch
+  Push Button
+  Active Buzzer
+*/
+
+const int vibrationPin = 2;
+const int reedPin = 3;
+const int buttonPin = 4;
+const int buzzerPin = 8;
+
+bool systemArmed = false;
+bool lastButtonState = HIGH;
+
+void setup() {
+  pinMode(vibrationPin, INPUT);
+  pinMode(reedPin, INPUT_PULLUP);
+  pinMode(buttonPin, INPUT_PULLUP);
+  pinMode(buzzerPin, OUTPUT);
+
+  digitalWrite(buzzerPin, LOW);
+
+  Serial.begin(9600);
+  Serial.println("Smart Bag Security System Started");
+}
+
+void loop() {
+
+  bool currentButton = digitalRead(buttonPin);
+
+  // Toggle Security Mode
+  if (lastButtonState == HIGH && currentButton == LOW) {
+    systemArmed = !systemArmed;
+
+    if (systemArmed)
+      Serial.println("Security Mode: ARMED");
+    else {
+      Serial.println("Security Mode: DISARMED");
+      digitalWrite(buzzerPin, LOW);
+    }
+
+    delay(300);
+  }
+
+  lastButtonState = currentButton;
+
+  if (systemArmed) {
+
+    bool movement = digitalRead(vibrationPin);
+    bool bagOpened = digitalRead(reedPin) == HIGH;
+
+    if (movement || bagOpened) {
+      triggerAlarm();
+    }
+
+  }
+
+}
+
+void triggerAlarm() {
+
+  Serial.println("WARNING! Unauthorized Access Detected!");
+
+  while (systemArmed) {
+
+    digitalWrite(buzzerPin, HIGH);
+    delay(250);
+    digitalWrite(buzzerPin, LOW);
+    delay(250);
+
+    if (digitalRead(buttonPin) == LOW) {
+      systemArmed = false;
+      digitalWrite(buzzerPin, LOW);
+      Serial.println("Alarm Stopped");
+      delay(500);
+      break;
+    }
+  }
+
+}
